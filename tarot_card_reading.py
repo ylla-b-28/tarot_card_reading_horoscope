@@ -1,6 +1,7 @@
 import random
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import Label
+
 from PIL import Image, ImageTk
 
 tarot_meanings = {
@@ -70,31 +71,39 @@ class TarotReader:
             })
         return results_list
 
-
 class TarotApp:
+    image_label: Label
+
     def __init__(self, main_window):
         self.main_window = main_window
         self.main_window.title("Daily Horoscope")
-        self.main_window.geometry("500x750")
+        self.main_window.geometry("500x800")
         self.main_window.configure(bg="#2c3e50")
 
-        self.title_label = tk.Label(main_window, text="Tarot Horoscope", font=("Arial", 20), fg="white", bg="#2c3e50")
-        self.title_label.pack(pady=10)
+        self.main_frame = tk.Frame(main_window, bg="#2c3e50")
+        self.main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.image_label = tk.Label(main_window, bg="#34495e", width=250, height=400)
-        self.image_label.pack(pady=10)
-
-        self.output_text = tk.Label(main_window, text="Choose cards and click Draw", wraplength=400, fg="white",
+        self.title_label = tk.Label(self.main_frame, text="Tarot Horoscope", font=("Arial", 24, "bold"), fg="#f1c40f",
                                     bg="#2c3e50")
-        self.output_text.pack(pady=10)
+        self.title_label.grid(row=0, column=0, pady=20)
+
+        self.image_label = tk.Label(self.main_frame, bg="#34495e", width=30, height=20, relief="sunken", bd=2)
+        self.image_label.grid(row=1, column=0, pady=10)
+
+        self.output_text = tk.Label(self.main_frame, text="Choose cards and click Draw", font=("Arial", 12),
+                                    wraplength=400, fg="white", bg="#2c3e50")
+        self.output_text.grid(row=2, column=0, pady=10)
 
         self.count_selection = tk.StringVar(main_window)
         self.count_selection.set("1")
-        self.dropdown_menu = tk.OptionMenu(main_window, self.count_selection, "1", "2", "3")
-        self.dropdown_menu.pack()
 
-        self.draw_button = tk.Button(main_window, text="Draw Cards", command=self.run_reading)
-        self.draw_button.pack(pady=20)
+        self.dropdown_menu = tk.OptionMenu(self.main_frame, self.count_selection, "1", "2", "3")
+        self.dropdown_menu.config(bg="#ecf0f1", fg="black")
+        self.dropdown_menu.grid(row=3, column=0, pady=5)
+
+        self.draw_button = tk.Button(self.main_frame, text="DRAW CARDS", font=("Arial", 12, "bold"),
+                                     command=self.run_reading, bg="#e67e22", fg="white", padx=20, pady=10)
+        self.draw_button.grid(row=4, column=0, pady=20)
 
     def run_reading(self):
         tarot_reader = TarotReader()
@@ -116,10 +125,9 @@ class TarotApp:
                 loaded_img = loaded_img.rotate(180)
             loaded_img = loaded_img.resize((250, 400), Image.LANCZOS)
             self.current_card_photo = ImageTk.PhotoImage(loaded_img)
-            self.image_label.config(image=self.current_card_photo)
+            self.image_label.config(image=self.current_card_photo, text="")
         except:
-            self.image_label.config(image='', text="[Image Not Found]")
-
+            self.image_label.config(image='', text=f"Missing: {card_name}", fg="white")
 
 if __name__ == "__main__":
     app_root = tk.Tk()
