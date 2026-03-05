@@ -27,3 +27,45 @@ tarot_meanings = {
     "Judgement": {"upright": "Reflection.", "reversed": "Self-judgment."},
     "The World": {"upright": "Completion.", "reversed": "Lack of closure."},
 }
+
+class TarotCard:
+    def __init__(self, card_name):
+        self.card_name = card_name
+
+class TarotDeck:
+    def __init__(self):
+        self.card_list = []
+        self.load_deck()
+
+    def load_deck(self):
+        for name in tarot_meanings.keys():
+            self.card_list.append(TarotCard(name))
+
+    def draw_single_card(self):
+        selected_card = random.choice(self.card_list)
+        self.card_list.remove(selected_card)
+        return selected_card
+
+class TarotReader:
+    def __init__(self):
+        self.current_deck = TarotDeck()
+
+    def draw_multiple_cards(self, card_count=1):
+        drawn_cards = []
+        for _ in range(card_count):
+            drawn_cards.append(self.current_deck.draw_single_card())
+        return drawn_cards
+
+    def get_interpretations(self, drawn_cards):
+        results_list = []
+        for card in drawn_cards:
+            is_upright = random.choice([True, False])
+            card_orientation = "Upright" if is_upright else "Reversed"
+            card_meaning = tarot_meanings[card.card_name]["upright" if is_upright else "reversed"]
+            results_list.append({
+                "name": card.card_name,
+                "orientation": card_orientation,
+                "meaning": card_meaning,
+                "is_upright": is_upright
+            })
+        return results_list
