@@ -69,3 +69,59 @@ class TarotReader:
                 "is_upright": is_upright
             })
         return results_list
+
+
+class TarotApp:
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.main_window.title("Daily Horoscope")
+        self.main_window.geometry("500x750")
+        self.main_window.configure(bg="#2c3e50")
+
+        self.title_label = tk.Label(main_window, text="Tarot Horoscope", font=("Arial", 20), fg="white", bg="#2c3e50")
+        self.title_label.pack(pady=10)
+
+        self.image_label = tk.Label(main_window, bg="#34495e", width=250, height=400)
+        self.image_label.pack(pady=10)
+
+        self.output_text = tk.Label(main_window, text="Choose cards and click Draw", wraplength=400, fg="white",
+                                    bg="#2c3e50")
+        self.output_text.pack(pady=10)
+
+        self.count_selection = tk.StringVar(main_window)
+        self.count_selection.set("1")
+        self.dropdown_menu = tk.OptionMenu(main_window, self.count_selection, "1", "2", "3")
+        self.dropdown_menu.pack()
+
+        self.draw_button = tk.Button(main_window, text="Draw Cards", command=self.run_reading)
+        self.draw_button.pack(pady=20)
+
+    def run_reading(self):
+        tarot_reader = TarotReader()
+        user_count = int(self.count_selection.get())
+        reading_results = tarot_reader.get_interpretations(tarot_reader.draw_multiple_cards(user_count))
+
+        final_display_text = ""
+        for item in reading_results:
+            final_display_text += f"{item['name']} ({item['orientation']}): {item['meaning']}\n\n"
+            self.refresh_card_image(item['name'], item['is_upright'])
+
+        self.output_text.config(text=final_display_text)
+
+    def refresh_card_image(self, card_name, is_upright):
+        try:
+            image_path = f"images/{card_name.lower().replace(' ', '_')}.png"
+            loaded_img = Image.open(image_path)
+            if not is_upright:
+                loaded_img = loaded_img.rotate(180)
+            loaded_img = loaded_img.resize((250, 400), Image.LANCZOS)
+            self.current_card_photo = ImageTk.PhotoImage(loaded_img)
+            self.image_label.config(image=self.current_card_photo)
+        except:
+            self.image_label.config(image='', text="[Image Not Found]")
+
+
+if __name__ == "__main__":
+    app_root = tk.Tk()
+    tarot_instance = TarotApp(app_root)
+    app_root.mainloop()
