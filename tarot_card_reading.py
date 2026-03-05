@@ -1,5 +1,8 @@
 import random
 import tkinter as tk
+from tkinter import Label
+import os
+from datetime import date
 from PIL import Image, ImageTk
 
 tarot_meanings = {
@@ -135,21 +138,48 @@ class TarotReader:
             })
         return results_list
 
-
 class TarotApp:
     def __init__(self, main_window):
         self.main_window = main_window
         self.main_window.title("Mystical Tarot Horoscope")
-        self.main_window.geometry("850x850")
-        self.main_window.resizable(False, False)
+        self.main_window.geometry("900x850")
         self.main_window.configure(bg="#1a1a2e")
 
-        self.title_label = tk.Label(main_window, text="✧ YOUR DAILY READING ✧", font=("Georgia", 22, "bold"),
-                                    fg="#e94560", bg="#1a1a2e")
-        self.title_label.pack(pady=15)
+        self.user_name = tk.StringVar(value="Seeker")
+        self.user_dob = tk.StringVar(value="MM/DD/YYYY")
 
-        self.cards_frame = tk.Frame(main_window, bg="#1a1a2e")
-        self.cards_frame.pack(pady=10)
+        profile_frame = tk.Frame(main_window, bg="#16213e", bd=2, relief="ridge")
+        profile_frame.pack(pady=10, padx=20, fill="x")
+
+        tk.Label(profile_frame, text="Name:", font=("Arial", 10, "bold"), fg="#e94560", bg="#16213e").grid(row=0,
+                                                                                                           column=0,
+                                                                                              padx=5,
+                                                                                                           pady=10)
+        tk.Entry(profile_frame, textvariable=self.user_name, width=20).grid(row=0, column=1, padx=5)
+        tk.Label(profile_frame, text="Birthday (MM/DD/YYYY):", font=("Arial", 10, "bold"), fg="#e94560",
+                 bg="#16213e").grid(row=0, column=2, padx=5)
+        tk.Entry(profile_frame, textvariable=self.user_dob, width=20).grid(row=0, column=3, padx=5)
+
+        self.title_label = tk.Label(main_window, text="✧ YOUR DESTINY AWAITS ✧", font=("Georgia", 22, "bold"),
+                                    fg="#e94560", bg="#1a1a2e")
+        self.title_label.pack(pady=10)
+
+        self.layout_frame = tk.Frame(main_window, bg="#1a1a2e")
+        self.layout_frame.pack(pady=5)
+
+        self.soul_side = tk.Frame(self.layout_frame, bg="#1a1a2e", padx=10)
+        self.soul_side.pack(side="left")
+        tk.Label(self.soul_side, text="SOUL CARD", font=("Arial", 11, "bold"), fg="#f1c40f", bg="#1a1a2e").pack()
+        self.soul_card_label = tk.Label(self.soul_side, bg="#16213e", relief="ridge", bd=3)
+        self.soul_card_label.pack(pady=5)
+
+        self.reading_side = tk.Frame(self.layout_frame, bg="#1a1a2e", padx=10)
+        self.reading_side.pack(side="left")
+        self.reading_title = tk.Label(self.reading_side, text="CURRENT READING", font=("Arial", 11, "bold"),
+                                      fg="#e94560", bg="#1a1a2e")
+        self.reading_title.pack()
+        self.cards_frame = tk.Frame(self.reading_side, bg="#1a1a2e")
+        self.cards_frame.pack(pady=5)
 
         self.card_labels = []
         self.current_photos = []
@@ -157,84 +187,115 @@ class TarotApp:
 
         self.text_frame = tk.Frame(main_window, bg="#16213e")
         self.text_frame.pack(pady=10, padx=20)
-
         self.scrollbar = tk.Scrollbar(self.text_frame)
         self.scrollbar.pack(side="right", fill="y")
-
         self.output_text = tk.Text(self.text_frame, font=("Arial", 11, "italic"), fg="#ecf0f1", bg="#16213e",
-                                   height=10, width=80, wrap="word", bd=0, yscrollcommand=self.scrollbar.set)
+                                   height=8, width=100, wrap="word", bd=0, yscrollcommand=self.scrollbar.set)
         self.output_text.pack(side="left")
         self.scrollbar.config(command=self.output_text.yview)
 
-        self.output_text.insert("1.0", "Select your spread and draw to reveal your destiny...")
-        self.output_text.config(state="disabled")
-
         self.controls_frame = tk.Frame(main_window, bg="#1a1a2e")
         self.controls_frame.pack(pady=10)
-
         self.count_selection = tk.StringVar(main_window)
         self.count_selection.set("1")
-        self.dropdown_menu = tk.OptionMenu(self.controls_frame, self.count_selection, "1", "2", "3")
-        self.dropdown_menu.config(bg="#0f3460", fg="white", width=5)
-        self.dropdown_menu.pack(side="left", padx=10)
-
+        tk.OptionMenu(self.controls_frame, self.count_selection, "1", "2", "3").pack(side="left", padx=10)
         self.draw_button = tk.Button(self.controls_frame, text="REVEAL CARDS", font=("Arial", 12, "bold"),
                                      command=self.run_reading, bg="#e94560", fg="white", padx=30, pady=10)
         self.draw_button.pack(side="left", padx=10)
 
+    def calculate_soul_card(self, dob_str):
+        try:
+            total = sum(int(digit) for digit in dob_str if digit.isdigit())
+            while total > 22:
+                total = sum(int(d) for d in str(total))
+            cards = list(tarot_meanings.keys())
+            return cards[total - 1] if 0 < total <= 22 else "The Fool"
+        except:
+            return "The Fool"
+
     def setup_slots(self, count):
-        for label in self.card_labels:
-            label.destroy()
-        self.card_labels = []
-        self.current_photos = []
-        import os
+        for label in self.card_labels: label.destroy()
+        self.card_labels, self.current_photos = [], []
         script_dir = os.path.dirname(os.path.abspath(__file__))
         back_path = os.path.join(script_dir, "tarot_cards_images", "card_back.png")
+
+        try:
+            back_img = Image.open(back_path).resize((130, 210), Image.LANCZOS)
+            self.soul_photo = ImageTk.PhotoImage(back_img)
+            self.soul_card_label.config(image=self.soul_photo)
+        except:
+            self.soul_card_label.config(text="Soul", fg="white", width=12, height=10)
+
         for i in range(count):
             lbl = tk.Label(self.cards_frame, bg="#16213e", relief="ridge", bd=3)
-            lbl.grid(row=0, column=i, padx=10)
+            lbl.grid(row=0, column=i, padx=5)
             self.card_labels.append(lbl)
             try:
-                img = Image.open(back_path).resize((180, 300), Image.LANCZOS)
+                img = Image.open(back_path).resize((130, 210), Image.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
                 self.current_photos.append(photo)
                 lbl.config(image=photo)
             except:
-                lbl.config(text="???", fg="white", width=20, height=15)
+                lbl.config(text="???", fg="white", width=12, height=10)
 
     def run_reading(self):
         user_count = int(self.count_selection.get())
         self.setup_slots(user_count)
-        tarot_reader = TarotReader()
-        reading_results = tarot_reader.get_interpretations(tarot_reader.draw_multiple_cards(user_count))
 
+        name = self.user_name.get()
+        birthday = self.user_dob.get()
+        soul_card_name = self.calculate_soul_card(birthday)
+        soul_card_meaning = tarot_meanings.get(soul_card_name, {}).get("upright", "A mystery.")
+
+        today_str = date.today().strftime("%B %d, %Y")
         self.output_text.config(state="normal")
         self.output_text.delete("1.0", tk.END)
 
-        for i, item in enumerate(reading_results):
-            header = f"\n--- {item['name'].upper()} ({item['orientation']}) ---\n"
+        intro = f"Greetings, {name}.\nToday is {today_str}.\n\n✧ YOUR SOUL CARD: {soul_card_name.upper()} ✧\n{soul_card_meaning}\n"
+        intro += "--------------------------------------------------\n\n"
+        self.output_text.insert(tk.END, intro)
+
+        self.update_single_image(self.soul_card_label, soul_card_name, True, (130, 210))
+
+        reader = TarotReader()
+        results = reader.get_interpretations(reader.draw_multiple_cards(user_count))
+
+        for i, item in enumerate(results):
+            header = f"--- {item['name'].upper()} ({item['orientation']}) ---\n"
             self.output_text.insert(tk.END, header)
-            self.output_text.insert(tk.END, f"{item['meaning']}\n")
-            self.update_card_image(i, item['name'], item['is_upright'])
+            self.output_text.insert(tk.END, f"{item['meaning']}\n\n")
+            self.update_reading_image(i, item['name'], item['is_upright'])
 
         self.output_text.config(state="disabled")
 
-    def update_card_image(self, index, card_name, is_upright):
-        import os
+    def update_single_image(self, label_widget, card_name, is_upright, size):
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             filename = f"{card_name.lower().replace(' ', '_')}.png"
-            image_path = os.path.join(script_dir, "tarot_cards_images", filename)
-            loaded_img = Image.open(image_path)
-            if not is_upright:
-                loaded_img = loaded_img.rotate(180)
-            loaded_img = loaded_img.resize((180, 300), Image.LANCZOS)
-            photo = ImageTk.PhotoImage(loaded_img)
-            self.current_photos[index] = photo
-            self.card_labels[index].config(image=photo, text="")
+            path = os.path.join(script_dir, "tarot_cards_images", filename)
+            img = Image.open(path)
+            if not is_upright: img = img.rotate(180)
+            img = img.resize(size, Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            label_widget.config(image=photo)
+            label_widget.image = photo
         except:
-            self.card_labels[index].config(text=f"Missing:\n{card_name}", fg="white", width=20, height=15)
-            
+            label_widget.config(text="Missing")
+
+    def update_reading_image(self, index, card_name, is_upright):
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            filename = f"{card_name.lower().replace(' ', '_')}.png"
+            path = os.path.join(script_dir, "tarot_cards_images", filename)
+            img = Image.open(path)
+            if not is_upright: img = img.rotate(180)
+            img = img.resize((130, 210), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.current_photos[index] = photo
+            self.card_labels[index].config(image=photo)
+        except:
+            self.card_labels[index].config(text="Missing")
+
 if __name__ == "__main__":
     app_root = tk.Tk()
     tarot_instance = TarotApp(app_root)
